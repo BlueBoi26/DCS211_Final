@@ -24,6 +24,10 @@ def readWebsite():
         None'''
     chosenState = chooseState()
     outage_url = "https://poweroutage.us/area/state/texas" + chooseState
+    
+    # Houseing price API? https://www.zillow.com/research/data/
+    
+    
     try:
         response = requests.get(outage_url)
         result = response.json()
