@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_7684f564cba91b87e38b54635e3767e6 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+    
+                    <style>
+                        .foliumtooltip {
+                            
+                        }
+                       .foliumtooltip table{
+                            margin: auto;
+                        }
+                        .foliumtooltip tr{
+                            text-align: left;
+                        }
+                        .foliumtooltip th{
+                            padding: 2px; padding-right: 8px;
+                        }
+                    </style>
+            
+</head>
+<body>
+    
+    
+        <div style="position: fixed; top: 10px; left: 50px; width: 300px; 
+                    background-color: white; border:2px solid grey; 
+                    padding: 10px; z-index:9999; font-size:16px;">
+            <b>District of Columbia Counties</b><br>
+            <a href="us_states_map.html" style="color: blue; text-decoration: none;">← Back to US Map</a>
+        </div>
+    
+    
+            <div class="folium-map" id="map_7684f564cba91b87e38b54635e3767e6" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_7684f564cba91b87e38b54635e3767e6 = L.map(
+                "map_7684f564cba91b87e38b54635e3767e6",
+                {
+                    center: [38.90587575, -77.01721203571428],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 7,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_be347c9ec6803981f506ff917ee90047 = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e",
+  "subdomains": "abcd",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_be347c9ec6803981f506ff917ee90047.addTo(map_7684f564cba91b87e38b54635e3767e6);
+        
+    
+        function geo_json_75d3dc890653d0175a5db7e7ba118244_styler(feature) {
+            switch(feature.id) {
+                default:
+                    return {"color": "#000000", "fillColor": "#ffff00", "fillOpacity": 0.3, "weight": 1};
+            }
+        }
+        function geo_json_75d3dc890653d0175a5db7e7ba118244_highlighter(feature) {
+            switch(feature.id) {
+                default:
+                    return {"color": "#1f78b4", "fillOpacity": 0.7, "weight": 3};
+            }
+        }
+
+        function geo_json_75d3dc890653d0175a5db7e7ba118244_onEachFeature(feature, layer) {
+
+            layer.on({
+                mouseout: function(e) {
+                    if(typeof e.target.setStyle === "function"){
+                            geo_json_75d3dc890653d0175a5db7e7ba118244.resetStyle(e.target);
+                    }
+                },
+                mouseover: function(e) {
+                    if(typeof e.target.setStyle === "function"){
+                        const highlightStyle = geo_json_75d3dc890653d0175a5db7e7ba118244_highlighter(e.target.feature)
+                        e.target.setStyle(highlightStyle);
+                    }
+                },
+            });
+        };
+        var geo_json_75d3dc890653d0175a5db7e7ba118244 = L.geoJson(null, {
+                onEachFeature: geo_json_75d3dc890653d0175a5db7e7ba118244_onEachFeature,
+            
+                style: geo_json_75d3dc890653d0175a5db7e7ba118244_styler,
+            ...{
+}
+        });
+
+        function geo_json_75d3dc890653d0175a5db7e7ba118244_add (data) {
+            geo_json_75d3dc890653d0175a5db7e7ba118244
+                .addData(data);
+        }
+            geo_json_75d3dc890653d0175a5db7e7ba118244_add({"features": [{"geometry": {"coordinates": [[[-77.032986, 38.8395], [-77.031698, 38.850512], [-77.040599, 38.871212], [-77.068199, 38.899811], [-77.0902, 38.904211], [-77.1012, 38.911111], [-77.119863, 38.934265], [-77.1199, 38.934311], [-77.1007, 38.94891], [-77.054299, 38.98511], [-77.040999, 38.99511], [-77.036299, 38.99171], [-77.015598, 38.97591], [-77.013798, 38.97441], [-77.008298, 38.97011], [-77.002636, 38.965521], [-77.002498, 38.96541], [-76.941722, 38.918019], [-76.909395, 38.892812], [-76.910795, 38.891712], [-76.919295, 38.885112], [-76.920195, 38.884412], [-76.949696, 38.861312], [-76.953696, 38.858512], [-77.001397, 38.821513], [-77.024392, 38.80297], [-77.038598, 38.791513], [-77.032986, 38.8395]]], "type": "Polygon"}, "id": "11001", "properties": {"CENSUSAREA": 61.048, "COUNTY": "001", "GEO_ID": "0500000US11001", "LSAD": "", "NAME": "District of Columbia", "STATE": "11"}, "type": "Feature"}], "type": "FeatureCollection"});
+
+        
+    
+    geo_json_75d3dc890653d0175a5db7e7ba118244.bindTooltip(
+    function(layer){
+    let div = L.DomUtil.create('div');
+    
+    let handleObject = feature => {
+        if (feature === null) {
+            return '';
+        } else if (typeof(feature)=='object') {
+            return JSON.stringify(feature);
+        } else {
+            return feature;
+        }
+    }
+    let fields = ["NAME"];
+    let aliases = ["County:"];
+    let table = '<table>' +
+        String(
+        fields.map(
+        (v,i)=>
+        `<tr>
+            <th>${aliases[i].toLocaleString()}</th>
+            
+            <td>${handleObject(layer.feature.properties[v]).toLocaleString()}</td>
+        </tr>`).join(''))
+    +'</table>';
+    div.innerHTML=table;
+    
+    return div
+    }
+    ,{
+  "sticky": true,
+  "className": "foliumtooltip",
+});
+                     
+    
+            geo_json_75d3dc890653d0175a5db7e7ba118244.addTo(map_7684f564cba91b87e38b54635e3767e6);
+        
+</script>
+</html>
