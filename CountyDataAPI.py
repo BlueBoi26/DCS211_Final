@@ -108,7 +108,7 @@ def get_census_data():
         print("Renaming columns to human-readable names...")
         final_df.rename(columns=code_to_name, inplace=True)
         
-        filename = "us_county_data.csv"
+        filename = "county_data.csv"
         final_df.to_csv(filename, index=False)
         print(f"DONE! Data saved to '{filename}' with {len(final_df)} rows.")
     else:
