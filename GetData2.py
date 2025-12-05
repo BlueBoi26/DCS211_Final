@@ -3,15 +3,16 @@ import pandas as pd
 import time
 
 API_KEY = "4416faddced3940d12388e16c5cb27ff03c9011b"
-
 YEAR = "2022"
 DATASET = "acs/acs5"
 BASE_URL = f"https://api.census.gov/data/{YEAR}/{DATASET}"
 
+
 def get_census_data():
     print("--- US Census Data Downloader ---")
     print("This script fetches data for ALL counties in the US.")
-
+    print("It will automatically rename the confusing codes (e.g. B01003_001E) to readable names in the CSV.")
+    
     presets = {
         "Total Population": "B01003_001E",
         "Median Age": "B01002_001E",
@@ -28,25 +29,29 @@ def get_census_data():
         "Median Home Value": "B25077_001E"
     }
 
+    code_to_name = {v: k for k, v in presets.items()}
+    
+    code_to_name["NAME"] = "County Name"
+
     print("\n--- CHEAT SHEET: Common Variable Codes ---")
     print("  [Demographics]")
-    print("  Total Population:          B01003_001E")
-    print("  Median Age:                B01002_001E")
-    print("  White Alone:               B02001_002E")
-    print("  Black/African American:    B02001_003E")
-    print("  Hispanic or Latino:        B03003_003E")
-    print("  Asian Alone:               B02001_005E")
+    print(f"  Total Population:          {presets['Total Population']}")
+    print(f"  Median Age:                {presets['Median Age']}")
+    print(f"  White Alone:               {presets['White Alone']}")
+    print(f"  Black/African American:    {presets['Black/African American']}")
+    print(f"  Hispanic or Latino:        {presets['Hispanic or Latino']}")
+    print(f"  Asian Alone:               {presets['Asian Alone']}")
     
     print("\n  [Economics]")
-    print("  Median Household Income:   B19013_001E")
-    print("  Per Capita Income:         B19301_001E")
-    print("  Persons in Poverty:        B17001_002E")
-    print("  Unemployment Count:        B23025_005E")
+    print(f"  Median Household Income:   {presets['Median Household Income']}")
+    print(f"  Per Capita Income:         {presets['Per Capita Income']}")
+    print(f"  Persons in Poverty:        {presets['Persons in Poverty']}")
+    print(f"  Unemployment Count:        {presets['Unemployment Count']}")
     
     print("\n  [Housing]")
-    print("  Total Housing Units:       B25001_001E")
-    print("  Median Gross Rent:         B25064_001E")
-    print("  Median Home Value:         B25077_001E")
+    print(f"  Total Housing Units:       {presets['Total Housing Units']}")
+    print(f"  Median Gross Rent:         {presets['Median Gross Rent']}")
+    print(f"  Median Home Value:         {presets['Median Home Value']}")
     
     print("\n  [Shortcuts]")
     print("  Type 'ALL' to download every variable listed above.")
@@ -73,13 +78,11 @@ def get_census_data():
     ]
 
     all_data = []
-
     print(f"\nStarting download...")
-    
+
     for fips in state_fips:
         try:
             url = f"{BASE_URL}?get={variable_string}&for=county:*&in=state:{fips}&key={API_KEY}"
-            
             response = requests.get(url)
             
             if response.status_code == 200:
@@ -89,12 +92,10 @@ def get_census_data():
                 
                 state_df = pd.DataFrame(rows, columns=headers)
                 all_data.append(state_df)
-                
                 print(f"Success: Retrieved data for State FIPS {fips}")
             else:
                 print(f"Failed: State FIPS {fips} (Status: {response.status_code})")
-                print(f"Error details: {response.text}")
-
+        
         except Exception as e:
             print(f"Error processing state {fips}: {e}")
         
@@ -103,6 +104,9 @@ def get_census_data():
     if all_data:
         print("\nCombining data...")
         final_df = pd.concat(all_data, ignore_index=True)
+        
+        print("Renaming columns to human-readable names...")
+        final_df.rename(columns=code_to_name, inplace=True)
         
         filename = "us_county_data.csv"
         final_df.to_csv(filename, index=False)
