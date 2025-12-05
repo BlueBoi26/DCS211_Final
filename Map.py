@@ -11,12 +11,12 @@ import threading
 STATES_GEOJSON_URL = "https://raw.githubusercontent.com/python-visualization/folium/master/examples/data/us-states.json"
 COUNTIES_GEOJSON_URL = "https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json"
 
-# Download GeoJSON
+# Download GeoJSON data
 print("Downloading GeoJSON data...")
 states_geo = requests.get(STATES_GEOJSON_URL).json()
 counties_geo = requests.get(COUNTIES_GEOJSON_URL).json()
 
-# Create a mapping of state names to their FIPS codes
+# Create a mapping of state names to their national id codes
 state_fips = {
     'Alabama': '01', 'Alaska': '02', 'Arizona': '04', 'Arkansas': '05',
     'California': '06', 'Colorado': '08', 'Connecticut': '09', 'Delaware': '10',
@@ -33,14 +33,12 @@ state_fips = {
     'Wisconsin': '55', 'Wyoming': '56', 'District of Columbia': '11'
 }
 
-# -------------------------------------------------------------
 # MAIN MAP – US STATES
-# -------------------------------------------------------------
 
 def create_states_map():
     m = folium.Map(location=[39.0, -98.5], zoom_start=4, tiles="CartoDB Positron")
 
-    # Add states GeoJSON
+    # Add states GeoJSON and outline them
     geojson = folium.GeoJson(
         states_geo,
         name="US States",
@@ -50,11 +48,15 @@ def create_states_map():
             "weight": 1,
             "fillOpacity": 0.1,
         },
+    
+    # Add a highlight function
         highlight_function=lambda feature: {
             "weight": 3,
             "color": "#1f78b4",
             "fillOpacity": 0.6,
         },
+        
+        # Show the name of the state for hovering mouse
         tooltip=folium.GeoJsonTooltip(
             fields=["name"],
             aliases=["State:"],
@@ -62,7 +64,8 @@ def create_states_map():
         ),
     ).add_to(m)
 
-    # Add working click handler - attach directly to the geojson object
+    # Add working click handler
+    # Attach directly to the geojson object
     click_script = """
     <script>
     function setupClickHandlers() {
@@ -103,16 +106,17 @@ def create_states_map():
     }
     </script>
     """
+    
+    # Put the JavaScript into the final HTML page by adding it as a raw <script> element in the map's root HTML structure.
     m.get_root().html.add_child(folium.Element(click_script))
 
     return m
 
-# -------------------------------------------------------------
 # COUNTY MAPS
-# -------------------------------------------------------------
 
 def create_county_map(state_name, state_fips_code):
-    # Filter counties by FIPS
+    
+    # Filter counties by national id
     state_counties = {
         'type': 'FeatureCollection',
         'features': [
@@ -121,11 +125,12 @@ def create_county_map(state_name, state_fips_code):
         ]
     }
 
+    # Error if the counties are not found
     if not state_counties['features']:
         print(f"  Warning: No counties found for {state_name}")
         return None
 
-    # Compute center
+    # Compute center to center the counties on the map
     all_coords = []
     for feature in state_counties['features']:
         coords = feature['geometry']['coordinates']
@@ -141,7 +146,7 @@ def create_county_map(state_name, state_fips_code):
     # Create county map
     m = folium.Map(location=[center_lat, center_lon], zoom_start=7, tiles="CartoDB Positron")
 
-    # Title + Back button
+    # Title and Back button in html
     title_html = f'''
         <div style="position: fixed; top: 10px; left: 50px; width: 300px; 
                     background-color: white; border:2px solid grey; 
@@ -176,9 +181,9 @@ def create_county_map(state_name, state_fips_code):
 
     return m
 
-# -------------------------------------------------------------
 # START LOCAL SERVER
-# -------------------------------------------------------------
+# I was having issues before, and I asked ChatGPT why my page was not loading correctly.
+# It recommended using a local server to host it, and it fixed the problem
 
 def start_server(port=8000):
     Handler = http.server.SimpleHTTPRequestHandler
@@ -188,14 +193,12 @@ def start_server(port=8000):
         print("Press Ctrl+C to stop the server\n")
         httpd.serve_forever()
 
-# -------------------------------------------------------------
-# GENERATE FILES
-# -------------------------------------------------------------
+# Generate files if they are missing from the Github
 
 print("\nCreating US states map...")
 states_map = create_states_map()
 states_map.save("us_states_map.html")
-print("✓ Saved us_states_map.html")
+print("Saved us_states_map.html")
 
 print("\nCreating county maps for each state...")
 for state_name, fips_code in state_fips.items():
@@ -204,11 +207,11 @@ for state_name, fips_code in state_fips.items():
     if county_map:
         filename = f"county_map_{state_name.replace(' ', '_')}.html"
         county_map.save(filename)
-        print("✓")
+        print("O")
     else:
-        print("✗")
+        print("X")
 
-print("\n✓ All maps created successfully!")
+print("\nAll maps created successfully!")
 
 # Start server in background thread
 PORT = 8000
@@ -216,6 +219,7 @@ server_thread = threading.Thread(target=start_server, args=(PORT,), daemon=True)
 server_thread.start()
 
 # Wait a moment for server to start, then open browser
+# ChatGPT told me this was important when it recommended a local server so I added it
 import time
 time.sleep(1)
 webbrowser.open(f'http://localhost:{PORT}/us_states_map.html')
