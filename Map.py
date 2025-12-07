@@ -6,6 +6,7 @@ import json
 import http.server
 import socketserver
 import threading
+import time
 
 # GeoJSON URLs
 STATES_GEOJSON_URL = "https://raw.githubusercontent.com/python-visualization/folium/master/examples/data/us-states.json"
@@ -33,7 +34,7 @@ state_fips = {
     'Wisconsin': '55', 'Wyoming': '56', 'District of Columbia': '11'
 }
 
-# MAIN MAP – US STATES
+# MAIN MAP – US States
 
 def create_states_map():
     m = folium.Map(location=[39.0, -98.5], zoom_start=4, tiles="CartoDB Positron")
@@ -48,15 +49,11 @@ def create_states_map():
             "weight": 1,
             "fillOpacity": 0.1,
         },
-    
-    # Add a highlight function
         highlight_function=lambda feature: {
             "weight": 3,
             "color": "#1f78b4",
             "fillOpacity": 0.6,
         },
-        
-        # Show the name of the state for hovering mouse
         tooltip=folium.GeoJsonTooltip(
             fields=["name"],
             aliases=["State:"],
@@ -64,39 +61,29 @@ def create_states_map():
         ),
     ).add_to(m)
 
-    # Add working click handler
-    # Attach directly to the geojson object
+    # Add working click handler: clicking a state opens its county map
     click_script = """
     <script>
     function setupClickHandlers() {
-        // Find the GeoJSON layer by iterating through map layers
         var foundLayer = null;
-        
-        // Try to find the layer in the window object
         for (var key in window) {
             if (window[key] && window[key]._leaflet_id && window[key].eachLayer) {
                 foundLayer = window[key];
                 break;
             }
         }
-        
         if (foundLayer) {
             foundLayer.eachLayer(function (stateLayer) {
                 stateLayer.on('click', function (e) {
                     var stateName = e.target.feature.properties.name;
                     var filename = 'county_map_' + stateName.replace(/ /g, '_') + '.html';
-                    console.log('Navigating to: ' + filename);
                     window.location.href = filename;
                 });
             });
-            console.log('Click handlers attached successfully');
         } else {
-            console.log('Layer not found, retrying...');
             setTimeout(setupClickHandlers, 100);
         }
     }
-    
-    // Wait for map to be fully loaded
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(setupClickHandlers, 500);
@@ -106,8 +93,6 @@ def create_states_map():
     }
     </script>
     """
-    
-    # Put the JavaScript into the final HTML page by adding it as a raw <script> element in the map's root HTML structure.
     m.get_root().html.add_child(folium.Element(click_script))
 
     return m
@@ -115,7 +100,7 @@ def create_states_map():
 # COUNTY MAPS
 
 def create_county_map(state_name, state_fips_code):
-    
+
     # Filter counties by national id
     state_counties = {
         'type': 'FeatureCollection',
@@ -125,7 +110,6 @@ def create_county_map(state_name, state_fips_code):
         ]
     }
 
-    # Error if the counties are not found
     if not state_counties['features']:
         print(f"  Warning: No counties found for {state_name}")
         return None
@@ -143,13 +127,11 @@ def create_county_map(state_name, state_fips_code):
     center_lat = sum(c[0] for c in all_coords) / len(all_coords)
     center_lon = sum(c[1] for c in all_coords) / len(all_coords)
 
-    # Create county map
     m = folium.Map(location=[center_lat, center_lon], zoom_start=7, tiles="CartoDB Positron")
 
-    # Title and Back button in html
     title_html = f'''
-        <div style="position: fixed; top: 10px; left: 50px; width: 300px; 
-                    background-color: white; border:2px solid grey; 
+        <div style="position: fixed; top: 10px; left: 50px; width: 300px;
+                    background-color: white; border:2px solid grey;
                     padding: 10px; z-index:9999; font-size:16px;">
             <b>{state_name} Counties</b><br>
             <a href="us_states_map.html" style="color: blue; text-decoration: none;">← Back to US Map</a>
@@ -157,8 +139,7 @@ def create_county_map(state_name, state_fips_code):
     '''
     m.get_root().html.add_child(folium.Element(title_html))
 
-    # Add county borders
-    folium.GeoJson(
+    county_geo = folium.GeoJson(
         state_counties,
         name=f"{state_name} Counties",
         style_function=lambda feature: {
@@ -179,21 +160,152 @@ def create_county_map(state_name, state_fips_code):
         ),
     ).add_to(m)
 
+    # Average box for county info
+    selection_js = """
+    <script>
+
+    let selectedCounties = [];
+
+    function computeAverages(dataList) {
+        if (dataList.length === 0) return {};
+
+        let sums = {};
+        let counts = {};
+
+        dataList.forEach(obj => {
+            for (let key in obj) {
+                let val = obj[key];
+                if (typeof val === "number") {
+                    if (!sums[key]) {
+                        sums[key] = 0;
+                        counts[key] = 0;
+                    }
+                    sums[key] += val;
+                    counts[key] += 1;
+                }
+            }
+        });
+
+        let result = {};
+        for (let key in sums) {
+            result[key] = sums[key] / counts[key];
+        }
+        return result;
+    }
+
+    function updateStatsBox() {
+        let averages = computeAverages(selectedCounties);
+
+        let box = document.getElementById("county-stats-box");
+        if (!box) return;
+
+        if (selectedCounties.length === 0) {
+            box.innerHTML = "<b>No counties selected</b>";
+            return;
+        }
+
+        let html = `<b>Selected Counties: ${selectedCounties.length}</b><br><hr>`;
+        for (let key in averages) {
+            html += `${key}: ${averages[key].toFixed(2)}<br>`;
+        }
+
+        box.innerHTML = html;
+    }
+
+    function setupCountySelection(countyLayerGroup) {
+
+        countyLayerGroup.eachLayer(function(layer) {
+
+            const originalStyle = {
+                weight: 1,
+                color: "#000000",
+                fillColor: "#ffff00",
+                fillOpacity: 0.3
+            };
+
+            const highlightStyle = {
+                weight: 3,
+                color: "#1f78b4",
+                fillColor: "#1f78b4",
+                fillOpacity: 0.6
+            };
+
+            layer.on("click", function (e) {
+                const props = e.target.feature.properties;
+                const index = selectedCounties.findIndex(
+                    c => c.NAME === props.NAME
+                );
+
+                if (index === -1) {
+                    selectedCounties.push(props);
+                    layer.setStyle(highlightStyle);
+                } else {
+                    selectedCounties.splice(index, 1);
+                    layer.setStyle(originalStyle);
+                }
+
+                updateStatsBox();
+            });
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(function () {
+
+            if (!document.getElementById("county-stats-box")) {
+                let statsBox = document.createElement("div");
+                statsBox.id = "county-stats-box";
+                statsBox.style.position = "fixed";
+                statsBox.style.bottom = "20px";
+                statsBox.style.right = "20px";
+                statsBox.style.width = "260px";
+                statsBox.style.maxHeight = "300px";
+                statsBox.style.overflowY = "auto";
+                statsBox.style.background = "white";
+                statsBox.style.border = "2px solid black";
+                statsBox.style.padding = "10px";
+                statsBox.style.zIndex = 9999;
+                statsBox.style.fontSize = "14px";
+                statsBox.innerHTML = "<b>No counties selected</b>";
+                document.body.appendChild(statsBox);
+            }
+
+            let countyLayerGroup = null;
+            for (let key in window) {
+                if (
+                    window[key] && 
+                    window[key]._layers &&
+                    Object.values(window[key]._layers)[0]?.feature?.properties?.NAME
+                ) {
+                    countyLayerGroup = window[key];
+                    break;
+                }
+            }
+
+            if (countyLayerGroup) {
+                setupCountySelection(countyLayerGroup);
+            } else {
+                console.log("Could not find county GeoJSON layer.");
+            }
+
+        }, 500);
+    });
+
+    </script>
+    """
+    m.get_root().html.add_child(folium.Element(selection_js))
+    # --- End JS insertion ---
+
     return m
 
 # START LOCAL SERVER
-# I was having issues before, and I asked ChatGPT why my page was not loading correctly.
-# It recommended using a local server to host it, and it fixed the problem
-
 def start_server(port=8000):
     Handler = http.server.SimpleHTTPRequestHandler
     with socketserver.TCPServer(("", port), Handler) as httpd:
-        print(f"\n🌐 Server running at http://localhost:{port}/")
+        print(f"\nServer running at http://localhost:{port}/")
         print(f"Opening browser to http://localhost:{port}/us_states_map.html")
         print("Press Ctrl+C to stop the server\n")
         httpd.serve_forever()
-
-# Generate files if they are missing from the Github
 
 print("\nCreating US states map...")
 states_map = create_states_map()
@@ -219,14 +331,11 @@ server_thread = threading.Thread(target=start_server, args=(PORT,), daemon=True)
 server_thread.start()
 
 # Wait a moment for server to start, then open browser
-# ChatGPT told me this was important when it recommended a local server so I added it
-import time
 time.sleep(1)
 webbrowser.open(f'http://localhost:{PORT}/us_states_map.html')
 
-# Keep script running
 try:
     while True:
         time.sleep(1)
 except KeyboardInterrupt:
-    print("\n\nServer stopped.")
+    print("\nServer stopped.")
