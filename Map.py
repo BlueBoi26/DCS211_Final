@@ -143,16 +143,12 @@ def create_county_map(state_name, state_fips_code):
         state_counties,
         name=f"{state_name} Counties",
         style_function=lambda feature: {
-            "fillColor": "#ffff00",
+            "fillColor": "#ffffff",
             "color": "#000000",
             "weight": 1,
             "fillOpacity": 0.3,
         },
-        highlight_function=lambda feature: {
-            "weight": 3,
-            "color": "#1f78b4",
-            "fillOpacity": 0.7,
-        },
+
         tooltip=folium.GeoJsonTooltip(
             fields=["NAME"],
             aliases=["County:"],
@@ -219,7 +215,7 @@ def create_county_map(state_name, state_fips_code):
             const originalStyle = {
                 weight: 1,
                 color: "#000000",
-                fillColor: "#ffff00",
+                fillColor: "#ffffff",
                 fillOpacity: 0.3
             };
 
