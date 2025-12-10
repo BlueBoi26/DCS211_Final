@@ -377,9 +377,9 @@ for state_name, fips_code in state_fips.items():
     if county_map:
         filename = f"county_map_{state_name.replace(' ', '_')}.html"
         county_map.save(filename)
-        print("✓")
+        print("O")
     else:
-        print("✗")
+        print("X")
 
 print("\nAll maps created successfully!")
 print("\nHow to use:")
