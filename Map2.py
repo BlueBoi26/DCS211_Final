@@ -91,6 +91,7 @@ def create_states_map():
                 break;
             }
         }
+         // opens the correct state map if the statelayer is found
         if (foundLayer) {
             foundLayer.eachLayer(function (stateLayer) {
                 stateLayer.on('click', function (e) {
