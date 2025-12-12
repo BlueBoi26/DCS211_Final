@@ -360,6 +360,7 @@ def create_county_map(state_name, state_fips_code):
 # START LOCAL SERVER
 def start_server(port=8000):
     Handler = http.server.SimpleHTTPRequestHandler
+    socketserver.TCPServer.allow_reuse_address = True
     with socketserver.TCPServer(("", port), Handler) as httpd:
         print(f"\nServer running at http://localhost:{port}/")
         print(f"Opening browser to http://localhost:{port}/us_states_map.html")
