@@ -9,17 +9,15 @@ BASE_URL = f"https://api.census.gov/data/{YEAR}/{DATASET}"
 
 
 def get_census_data():
-    print("--- US Census Data Downloader ---")
-    print("This script fetches data for ALL counties in the US.")
-    print("It will automatically rename the confusing codes (e.g. B01003_001E) to readable names in the CSV.")
+    print("US Census Data Downloader")
     
     presets = {
         "Total Population": "B01003_001E",
         "Median Age": "B01002_001E",
-        "White Alone": "B02001_002E",
+        "White": "B02001_002E",
         "Black/African American": "B02001_003E",
         "Hispanic or Latino": "B03003_003E",
-        "Asian Alone": "B02001_005E",
+        "Asian": "B02001_005E",
         "Median Household Income": "B19013_001E",
         "Per Capita Income": "B19301_001E",
         "Persons in Poverty": "B17001_002E",
@@ -33,34 +31,32 @@ def get_census_data():
     
     code_to_name["NAME"] = "County Name"
 
-    print("\n--- CHEAT SHEET: Common Variable Codes ---")
-    print("  [Demographics]")
+    print("Variable Codes")
+    print("Demographics:")
     print(f"  Total Population:          {presets['Total Population']}")
     print(f"  Median Age:                {presets['Median Age']}")
-    print(f"  White Alone:               {presets['White Alone']}")
+    print(f"  White:                     {presets['White']}")
     print(f"  Black/African American:    {presets['Black/African American']}")
     print(f"  Hispanic or Latino:        {presets['Hispanic or Latino']}")
-    print(f"  Asian Alone:               {presets['Asian Alone']}")
-    
-    print("\n  [Economics]")
+    print(f"  Asian:                     {presets['Asian']}")
+    print()
+    print("Economics:")
     print(f"  Median Household Income:   {presets['Median Household Income']}")
     print(f"  Per Capita Income:         {presets['Per Capita Income']}")
     print(f"  Persons in Poverty:        {presets['Persons in Poverty']}")
     print(f"  Unemployment Count:        {presets['Unemployment Count']}")
-    
-    print("\n  [Housing]")
+    print()
+    print("Housing:")
     print(f"  Total Housing Units:       {presets['Total Housing Units']}")
     print(f"  Median Gross Rent:         {presets['Median Gross Rent']}")
     print(f"  Median Home Value:         {presets['Median Home Value']}")
-    
-    print("\n  [Shortcuts]")
+    print()
     print("  Type 'ALL' to download every variable listed above.")
-    print("------------------------------------------")
-    
-    user_vars = input("\nEnter variable codes (separated by commas) OR type 'ALL': ").strip()
+    print()
+    user_vars = input("Enter variable codes (separated by commas) or type 'ALL': ").strip()
     
     if user_vars.upper() == "ALL":
-        print(f"\nCommand 'ALL' received. Selecting {len(presets)} variables...")
+        print(f"User typed 'ALL'. Selecting {len(presets)} variables...")
         variable_list = list(presets.values())
     else:
         variable_list = [v.strip() for v in user_vars.split(',')]
@@ -102,15 +98,13 @@ def get_census_data():
         time.sleep(0.5)
 
     if all_data:
-        print("\nCombining data...")
         final_df = pd.concat(all_data, ignore_index=True)
-        
-        print("Renaming columns to human-readable names...")
         final_df.rename(columns=code_to_name, inplace=True)
         
         filename = "county_data.csv"
         final_df.to_csv(filename, index=False)
-        print(f"DONE! Data saved to '{filename}' with {len(final_df)} rows.")
+
+        print(f"Data saved to '{filename}' with {len(final_df)} rows")
     else:
         print("No data was retrieved.")
 
