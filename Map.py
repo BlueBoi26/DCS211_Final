@@ -1,12 +1,29 @@
+# Folium is used to generate interactive Leaflet maps in HTML
 import folium
+
+# Requests is used to download GeoJSON data from external URLs
 import requests
+
+# Used to automatically open the generated maps in a web browser
 import webbrowser
+
+# OS utilities (not heavily used, but commonly included for file handling)
 import os
+
+# JSON is used to serialize Python dictionaries into JavaScript-readable format
 import json
+
+# Built-in modules used to run a simple local HTTP server
 import http.server
 import socketserver
+
+# Threading allows the web server to run without blocking the rest of the script
 import threading
+
+# Time is used for delays (e.g., waiting for the server to start)
 import time
+
+# Pandas is used to load and manipulate the census data
 import pandas as pd
 
 # GeoJSON URLs
@@ -55,7 +72,10 @@ state_fips = {
 
 # MAIN MAP — US States
 
-def create_states_map():
+def create_states_map() -> map:
+    """
+    Creates the map using folium
+    """
     m = folium.Map(location=[39.0, -98.5], zoom_start=4, tiles="CartoDB Positron")
 
     # Add states GeoJSON and outline them
@@ -113,6 +133,8 @@ def create_states_map():
     }
     </script>
     """
+    
+    # Insert the click handler code
     m.get_root().html.add_child(folium.Element(click_script))
 
     return m
@@ -120,6 +142,12 @@ def create_states_map():
 # COUNTY MAPS
 
 def create_county_map(state_name, state_fips_code):
+    """
+    Creates a map for each state showing its counties
+    
+    :param state_name: The state's name
+    :param state_fips_code: The state's FIPS code
+    """
 
     # Filter counties by national id
     state_counties = {
@@ -135,14 +163,22 @@ def create_county_map(state_name, state_fips_code):
         return None
 
     # Compute center to center the counties on the map
+    # Collect all latitude/longitude pairs from every county geometry
+    # This is used to compute a visual center for the state map
     all_coords = []
     for feature in state_counties['features']:
+        # Extract the coordinate data for the county geometry
         coords = feature['geometry']['coordinates']
+
+        # Handle single-polygon counties
         if feature['geometry']['type'] == 'Polygon':
+            # Convert (lon, lat) to (lat, lon) for Folium
             all_coords.extend([[coord[1], coord[0]] for coord in coords[0]])
         else:
+            # Handle multi-polygon counties (e.g., counties with islands)
             for polygon in coords:
                 all_coords.extend([[coord[1], coord[0]] for coord in polygon[0]])
+
 
     center_lat = sum(c[0] for c in all_coords) / len(all_coords)
     center_lon = sum(c[1] for c in all_coords) / len(all_coords)
@@ -359,29 +395,50 @@ def create_county_map(state_name, state_fips_code):
 
 # START LOCAL SERVER
 def start_server(port=8000):
+    """
+    Starts a simple local HTTP server to serve the generated HTML map files.
+    This allows the maps to be accessed in a web browser using localhost.
+    """
+
+    # Use Python's built-in request handler to serve files from the current directory
     Handler = http.server.SimpleHTTPRequestHandler
+
+    # Allow the server to reuse the same port if it was recently closed
     socketserver.TCPServer.allow_reuse_address = True
+
+    # Create and start the TCP server
     with socketserver.TCPServer(("", port), Handler) as httpd:
+        # Print helpful instructions for the user
         print(f"\nServer running at http://localhost:{port}/")
         print(f"Opening browser to http://localhost:{port}/us_states_map.html")
         print("Press Ctrl+C to stop the server\n")
+
+        # Keep the server running until the program is interrupted
         httpd.serve_forever()
 
+
+# Create and save the main US states map
 print("\nCreating US states map...")
 states_map = create_states_map()
 states_map.save("us_states_map.html")
 print("Saved us_states_map.html")
 
+# Generate and save a county-level map for each state
 print("\nCreating county maps for each state...")
 for state_name, fips_code in state_fips.items():
+    # Indicate which state is currently being processed
     print(f"  Processing {state_name}...", end=" ")
+
     county_map = create_county_map(state_name, fips_code)
+
     if county_map:
+        # Save the county map using a filename based on the state name
         filename = f"county_map_{state_name.replace(' ', '_')}.html"
         county_map.save(filename)
-        print("O")
+        print("O")  # Map created successfully
     else:
-        print("X")
+        print("X")  # No county data found for this state
+
 
 print("\nAll maps created successfully!")
 print("\nHow to use:")
