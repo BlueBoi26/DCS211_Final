@@ -37,7 +37,7 @@ counties_geo = requests.get(COUNTIES_GEOJSON_URL).json()
 
 # Read the census data CSV
 print("Reading census data...")
-census_data = pd.read_csv('county_data.csv')  # Despite the extension, it's actually a CSV
+census_data = pd.read_csv('county_data.csv')
 
 # Create a dictionary for quick lookup: FIPS code -> county data
 county_data_dict = {}
@@ -220,12 +220,14 @@ def create_county_map(state_name, state_fips_code):
     selection_js = f"""
     <script>
     
-    // Embedded county data
+    // embedded county data
     const countyDataDict = {county_data_json};
     const dataColumns = {data_columns_json};
     
+    // stores county FIPS codes
     let selectedCounties = [];
 
+    // handles missing and large numbers
     function formatNumber(num) {{
         if (num === null || num === undefined || isNaN(num)) return 'N/A';
         if (num === -666666666) return 'N/A';  // Handle missing values
@@ -235,6 +237,7 @@ def create_county_map(state_name, state_fips_code):
         return num.toLocaleString('en-US', {{maximumFractionDigits: 2}});
     }}
 
+    // computes column-wise averages
     function computeAverages(dataList) {{
         if (dataList.length === 0) return {{}};
 
@@ -265,6 +268,7 @@ def create_county_map(state_name, state_fips_code):
         return result;
     }}
 
+    // updates county on click to re-render html box
     function updateStatsBox() {{
         let box = document.getElementById("county-stats-box");
         if (!box) return;
@@ -277,7 +281,7 @@ def create_county_map(state_name, state_fips_code):
         let html = `<b>Selected Counties: ${{selectedCounties.length}}</b><br>`;
         
         if (selectedCounties.length === 1) {{
-            // Show full data for single county
+            // show full data for single county
             const fips = selectedCounties[0];
             const countyData = countyDataDict[fips];
             
@@ -294,7 +298,7 @@ def create_county_map(state_name, state_fips_code):
                 html += '</div>';
             }}
         }} else {{
-            // Show averages for multiple counties
+            // show averages for multiple counties
             let averages = computeAverages(selectedCounties);
             html += '<small>(Showing averages)</small>';
             html += '<hr style="margin: 5px 0;">';
@@ -310,6 +314,7 @@ def create_county_map(state_name, state_fips_code):
         box.innerHTML = html;
     }}
 
+    // county polygon clickhandling
     function setupCountySelection(countyLayerGroup) {{
 
         countyLayerGroup.eachLayer(function(layer) {{
